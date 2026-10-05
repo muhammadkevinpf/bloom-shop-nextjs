@@ -5,13 +5,15 @@ import EmptyCart from "@/components/cart/EmptyCart";
 import OrderSummary from "@/components/cart/OrderSummary";
 import Recommendations from "@/components/cart/Recommendations";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/context/CartContext";
+import { CartItem, selectCartCount, useCartHydrated } from "@/lib/store/cart-store";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+const emptyCartItems: CartItem[] = [];
+
 export default function Cart() {
-  const { cart } = useCart();
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cart = useCartHydrated((state) => state.cart, emptyCartItems);
+  const itemCount = useCartHydrated(selectCartCount, 0);
 
   if (cart.length === 0) {
     return <EmptyCart />;

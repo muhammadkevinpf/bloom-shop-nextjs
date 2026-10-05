@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/store/cart-store";
 import { cn } from "@/lib/utils";
 import { Check, Eye, Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
@@ -23,7 +23,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
 
-  const { addToCart } = useCart();
+  const addToCart = useCartStore((state) => state.addToCart);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();

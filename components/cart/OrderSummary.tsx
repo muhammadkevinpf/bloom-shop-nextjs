@@ -4,21 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/context/CartContext";
+import { selectCartCount, selectCartTotal, useCartHydrated } from "@/lib/store/cart-store";
 import { CreditCard, Heart, Shield, Truck } from "lucide-react";
 import Link from "next/link";
 
 export default function OrderSummary() {
-  const { cart } = useCart();
-
-  const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const subtotal = useCartHydrated(selectCartTotal, 0);
+  const itemCount = useCartHydrated(selectCartCount, 0);
   const shipping = subtotal > 50 ? 0 : 9.99;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <Card className="sticky top-4">
