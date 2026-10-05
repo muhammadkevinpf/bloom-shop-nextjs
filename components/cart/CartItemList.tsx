@@ -2,12 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCart } from "@/context/CartContext";
+import { CartItem as CartItemType, useCartHydrated, useCartStore } from "@/lib/store/cart-store";
 import { Trash2 } from "lucide-react";
 import CartItem from "./CartItem";
 
+const emptyItems: CartItemType[] = [];
+
 export default function CartItemList() {
-  const { cart, clearCart } = useCart();
+  const cart = useCartHydrated((state) => state.cart, emptyItems);
+  const clearCart = useCartStore((state) => state.clearCart);
 
   return (
     <Card>

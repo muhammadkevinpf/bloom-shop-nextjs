@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/context/CartContext";
+import { selectCartCount, useCartHydrated } from "@/lib/store/cart-store";
 import { Menu, Search, ShoppingCart, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,9 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 
 export default function Header() {
-  const { cart } = useCart();
-  const cartCount =
-    cart?.reduce((total, item) => total + item.quantity, 0) || 0;
+  const cartCount = useCartHydrated(selectCartCount, 0);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

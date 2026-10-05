@@ -6,7 +6,7 @@ import ProductNotFound from "@/components/product/ProductNotFound";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/context/CartContext";
+import { useCartStore } from "@/lib/store/cart-store";
 import products from "@/data/products.json";
 import { cn } from "@/lib/utils";
 import {
@@ -23,7 +23,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function Product() {
-  const { addToCart } = useCart();
+  const addToCart = useCartStore((state) => state.addToCart);
   const { productId } = useParams();
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
