@@ -1,6 +1,7 @@
 "use client";
 
 import { selectCartCount, useCartHydrated } from "@/lib/store/cart-store";
+import { authService } from "@/lib/services/auth";
 import { Menu, Search, ShoppingCart, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,6 +15,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const pathname = usePathname();
+  const { isAuthenticated } = authService;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,11 +46,10 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg"
-          : "bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm"
-      }`}
+      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+        ? "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg"
+        : "bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm"
+        }`}
     >
       <div className="container mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
@@ -70,11 +71,10 @@ export default function Header() {
                 <Link
                   key={href}
                   href={href}
-                  className={`relative py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActivePath(href)
-                      ? "bg-orange-100 shadow-md"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
+                  className={`relative py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${isActivePath(href)
+                    ? "bg-orange-100 shadow-md"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
                   aria-current={isActivePath(href) ? "page" : undefined}
                 >
                   {label}
@@ -134,22 +134,31 @@ export default function Header() {
                 </span>
               )}
             </Link>
-
             <div className="hidden sm:flex items-center space-x-2">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="text-sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button size="sm" variant="default" className="text-sm">
-                  Sign Up
-                </Button>
-              </Link>
+              {
+                isAuthenticated() ?
+                  <Link href="/profile">
+                    <Button variant="ghost" size="sm" className="text-sm cursor-pointer">
+                      Profile
+                    </Button>
+                  </Link> :
+                  <>
+                    <Link href="/signin">
+                      <Button variant="ghost" size="sm" className="text-sm cursor-pointer">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link href="/signup">
+                      <Button size="sm" variant="default" className="text-sm cursor-pointer">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+              }
+
             </div>
           </div>
         </div>
-
         {isSearchOpen && (
           <div className="lg:hidden mt-4 animate-in slide-in-from-top duration-200">
             <form className="relative">
@@ -179,11 +188,10 @@ export default function Header() {
                   key={href}
                   href={href}
                   onClick={closeMobileMenu}
-                  className={`text-sm font-medium py-2 px-3 rounded-lg transition-all ${
-                    isActivePath(href)
-                      ? "bg-orange-100"
-                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
+                  className={`text-sm font-medium py-2 px-3 rounded-lg transition-all ${isActivePath(href)
+                    ? "bg-orange-100"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
                   aria-current={isActivePath(href) ? "page" : undefined}
                 >
                   {label}
