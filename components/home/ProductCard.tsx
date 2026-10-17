@@ -4,18 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCartStore } from "@/lib/store/cart-store";
 import { cn } from "@/lib/utils";
+
+import { Product } from "@/types/product";
 import { Check, Eye, Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-
-interface Product {
-  id: number;
-  image: string;
-  name: string;
-  price: number;
-  category?: string;
-}
 
 export default function ProductCard({ product }: { product: Product }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -36,8 +30,8 @@ export default function ProductCard({ product }: { product: Product }) {
     addToCart({
       id: product.id,
       name: product.name,
-      price: product.price,
-      image: product.image,
+      price: product.basePrice,
+      image: product.imageUrl,
       quantity: 1,
     });
 
@@ -76,7 +70,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <div className="aspect-square overflow-hidden bg-muted">
             {!imageError ? (
               <Image
-                src={product.image}
+                src={product.imageUrl}
                 alt={product.name}
                 width={400}
                 height={400}
@@ -113,7 +107,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-foreground">
-            ${product.price.toFixed(2)}
+            ${product.basePrice.toFixed(2)}
           </span>
         </div>
 

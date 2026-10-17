@@ -3,18 +3,18 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface CartItem {
-    id: number;
+    id: string;
     name: string;
     price: number;
-    image: string;
+    image?: string;
     quantity: number;
 }
 
 export interface CartStore {
     cart: CartItem[];
     addToCart: (item: CartItem) => void;
-    removeFromCart: (id: number) => void;
-    updateQuantity: (id: number, quantity: number) => void;
+    removeFromCart: (id: string) => void;
+    updateQuantity: (id: string, quantity: number) => void;
     clearCart: () => void;
 }
 
@@ -65,7 +65,7 @@ export const selectCartCount = (state: CartStore) =>
 export const selectCartTotal = (state: CartStore) =>
     state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 
 // SSR/Hydration safe hook helper for client components
 export function useCartHydrated<T>(selector: (state: CartStore) => T, fallback: T): T {

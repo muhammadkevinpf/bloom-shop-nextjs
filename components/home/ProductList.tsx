@@ -1,7 +1,16 @@
-import products from "@/data/products.json";
+"use client";
+
+import { useProductStore } from "@/lib/store/product-store";
 import ProductCard from "./ProductCard";
+import { useEffect } from "react";
 
 export default function ProductList() {
+  const { products, fetchProducts } = useProductStore();
+
+  useEffect(() => {
+    fetchProducts(0, 100);
+  }, []);
+
   return (
     <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
       {products.length > 0 ? (
