@@ -75,7 +75,7 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         </Button>
 
-        <Link href={`/product/${product.id}`} className="block relative">
+        <Link href={`/product/${product.slug}`} className="block relative">
           <div className="aspect-square overflow-hidden bg-muted">
             {!imageError ? (
               <Image
@@ -110,7 +110,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
 
       <CardContent className="p-4 space-y-3">
-        <Link href={`/product/${product.id}`}>
+        <Link href={`/product/${product.slug}`}>
           <h2 className="font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h2>
