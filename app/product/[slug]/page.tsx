@@ -229,7 +229,7 @@ export default function Product() {
 
       <Features />
 
-      <RelatedProducts product={product} />
+      <RelatedProducts />
     </div>
   );
 }
