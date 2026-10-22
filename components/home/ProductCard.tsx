@@ -1,21 +1,17 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCartStore } from "@/lib/store/cart-store";
+import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
+
+import { Product } from "@/types/product";
 import { Check, Eye, Heart, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-
-interface Product {
-  id: number;
-  image: string;
-  name: string;
-  price: number;
-  category?: string;
-}
+import { useRouter } from 'next/navigation';
 
 export default function ProductCard({ product }: { product: Product }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -24,27 +20,34 @@ export default function ProductCard({ product }: { product: Product }) {
   const [justAdded, setJustAdded] = useState(false);
 
   const addToCart = useCartStore((state) => state.addToCart);
+  const router = useRouter();
+
+  const { isAuthenticated } = authService;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    setIsAdding(true);
+    if (isAuthenticated()) {
+      setIsAdding(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
-    });
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.basePrice,
+        image: product.imageUrl,
+        quantity: 1,
+      });
 
-    setIsAdding(false);
-    setJustAdded(true);
+      setIsAdding(false);
+      setJustAdded(true);
 
-    setTimeout(() => setJustAdded(false), 2000);
+      setTimeout(() => setJustAdded(false), 2000);
+    } else {
+      router.push("/signin");
+    }
   };
 
   const handleToggleLike = (e: React.MouseEvent) => {
@@ -62,7 +65,7 @@ export default function ProductCard({ product }: { product: Product }) {
           name="Like Button"
           className={cn(
             "absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/80 backdrop-blur-sm hover:bg-background",
-            isLiked && "opacity-100 text-destructive"
+            isLiked && "opacity-100 text-destructive",
           )}
           onClick={handleToggleLike}
         >
@@ -72,11 +75,11 @@ export default function ProductCard({ product }: { product: Product }) {
           />
         </Button>
 
-        <Link href={`/product/${product.id}`} className="block relative">
+        <Link href={`/product/${product.slug}`} className="block relative">
           <div className="aspect-square overflow-hidden bg-muted">
             {!imageError ? (
               <Image
-                src={product.image}
+                src={product.imageUrl}
                 alt={product.name}
                 width={400}
                 height={400}
@@ -93,19 +96,21 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
 
           <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
-            <Button
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            <span
+              className={cn(
+                buttonVariants({ size: "sm" }),
+                "pointer-events-none",
+              )}
             >
               <Eye className="h-4 w-4 mr-2" />
               Quick View
-            </Button>
+            </span>
           </div>
         </Link>
       </div>
 
       <CardContent className="p-4 space-y-3">
-        <Link href={`/product/${product.id}`}>
+        <Link href={`/product/${product.slug}`}>
           <h2 className="font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors">
             {product.name}
           </h2>
@@ -113,7 +118,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-foreground">
-            ${product.price.toFixed(2)}
+            ${product.basePrice.toFixed(2)}
           </span>
         </div>
 
@@ -122,7 +127,7 @@ export default function ProductCard({ product }: { product: Product }) {
             "w-full transition-all duration-300",
             justAdded
               ? "bg-green-600 text-white hover:bg-green-600"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "bg-primary text-primary-foreground hover:bg-primary/90",
           )}
           onClick={handleAddToCart}
           disabled={isAdding}

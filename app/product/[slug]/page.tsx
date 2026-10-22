@@ -7,7 +7,8 @@ import RelatedProducts from "@/components/product/RelatedProducts";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/lib/store/cart-store";
-import products from "@/data/products.json";
+import { useProductStore } from "@/lib/store/product-store";
+import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -20,42 +21,49 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Product() {
   const addToCart = useCartStore((state) => state.addToCart);
-  const { productId } = useParams();
+  const { selectedProduct: product, fetchProductBySlug, isLoading } = useProductStore();
+  const { slug } = useParams();
+  const { isAuthenticated } = authService;
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const product = products.find((p) => p.id === parseInt(productId as string));
+  useEffect(() => {
+    if (slug) fetchProductBySlug(slug as string)
+  }, [slug, fetchProductBySlug]);
+
 
   if (!product) {
     return <ProductNotFound />;
   }
 
   const handleAddToCart = async () => {
-    setIsAdding(true);
+    if (isAuthenticated()) {
+      setIsAdding(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    for (let i = 0; i < quantity; i++) {
       addToCart({
         id: product.id,
         name: product.name,
-        price: product.price,
-        image: product.image,
+        price: product.basePrice,
+        image: product.imageUrl,
         quantity: 1,
       });
+
+      setIsAdding(false);
+      setJustAdded(true);
+
+      setTimeout(() => setJustAdded(false), 2000);
+    } else {
+      router.push("/signin");
     }
-
-    setIsAdding(false);
-    setJustAdded(true);
-
-    setTimeout(() => setJustAdded(false), 2000);
   };
 
   const handleBuyNow = () => {
@@ -80,7 +88,7 @@ export default function Product() {
           <div className="w-full max-w-[500px] mx-auto flex flex-col items-center px-4">
             <div className="rounded-xl shadow-lg overflow-hidden mb-4 w-full">
               <Image
-                src={product.image}
+                src={product.images[0].imageUrl}
                 alt="Selected product"
                 width={600}
                 height={600}
@@ -109,7 +117,7 @@ export default function Product() {
 
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-foreground">
-              ${product.price.toFixed(2)}
+              ${product.basePrice.toFixed(2)}
             </span>
           </div>
 

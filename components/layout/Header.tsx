@@ -14,10 +14,12 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated } = authService;
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -39,6 +41,7 @@ export default function Header() {
   const closeMobileMenu = useCallback(() => {
     setIsMobileOpen(false);
   }, []);
+  
 
   const isActivePath = (path: string) => pathname === path;
 
@@ -46,10 +49,11 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
-        ? "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg"
-        : "bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm"
-        }`}
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg"
+          : "bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm"
+      }`}
     >
       <div className="container mx-auto px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
@@ -71,10 +75,11 @@ export default function Header() {
                 <Link
                   key={href}
                   href={href}
-                  className={`relative py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${isActivePath(href)
-                    ? "bg-orange-100 shadow-md"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
+                  className={`relative py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActivePath(href)
+                      ? "bg-orange-100 shadow-md"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
                   aria-current={isActivePath(href) ? "page" : undefined}
                 >
                   {label}
@@ -127,7 +132,7 @@ export default function Header() {
               <ShoppingCart className="h-6 w-6 text-gray-700 group-hover:text-gray-900 transition-colors" />
               {cartCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1"
+                  className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full min-w-5 h-5 flex items-center justify-center px-1"
                   aria-label={`${cartCount} items in cart`}
                 >
                   {cartCount > 99 ? "99+" : cartCount}
@@ -135,27 +140,20 @@ export default function Header() {
               )}
             </Link>
             <div className="hidden sm:flex items-center space-x-2">
-              {
-                isAuthenticated() ?
-                  <Link href="/profile">
-                    <Button variant="ghost" size="sm" className="text-sm cursor-pointer">
-                      Profile
-                    </Button>
-                  </Link> :
-                  <>
-                    <Link href="/signin">
-                      <Button variant="ghost" size="sm" className="text-sm cursor-pointer">
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link href="/signup">
-                      <Button size="sm" variant="default" className="text-sm cursor-pointer">
-                        Sign Up
-                      </Button>
-                    </Link>
-                  </>
-              }
-
+              {mounted && isAuthenticated() ? (
+                <Button variant="ghost" size="default" asChild>
+                  <Link href="/profile">Profile</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" size="default" asChild>
+                    <Link href="/signin">Sign In</Link>
+                  </Button>
+                  <Button size="default" variant="default" asChild>
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -188,10 +186,11 @@ export default function Header() {
                   key={href}
                   href={href}
                   onClick={closeMobileMenu}
-                  className={`text-sm font-medium py-2 px-3 rounded-lg transition-all ${isActivePath(href)
-                    ? "bg-orange-100"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                  className={`text-sm font-medium py-2 px-3 rounded-lg transition-all ${
+                    isActivePath(href)
+                      ? "bg-orange-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                   aria-current={isActivePath(href) ? "page" : undefined}
                 >
                   {label}
