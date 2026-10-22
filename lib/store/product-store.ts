@@ -6,12 +6,14 @@ import { productService } from '@/lib/services/product';
 
 interface ProductStore {
     products: Product[];
+    featuredProducts: Product[];
     pagination: Omit<PageableData<Product>, "content"> | null;
     isLoading: boolean;
     error: string | null;
     selectedProduct: ProductDetail | null;
     selectedVariant: ProductVariant | null;
     fetchProducts: (page?: number, size?: number) => Promise<void>;
+    fetchFeaturedProducts: () => Promise<void>;
     fetchProductBySlug: (slug: string) => Promise<void>;
     setSelectedVariant: (variant: ProductVariant | null) => void;
     clearSelectedProduct: () => void;
@@ -19,6 +21,7 @@ interface ProductStore {
 
 export const useProductStore = create<ProductStore>()(devtools((set, get) => ({
     products: [],
+    featuredProducts: [],
     pagination: null,
     isLoading: false,
     error: null,
@@ -57,6 +60,20 @@ export const useProductStore = create<ProductStore>()(devtools((set, get) => ({
             }
         } catch (err: any) {
             set({ error: err.message, isLoading: false });
+        }
+    },
+    fetchFeaturedProducts: async () => {
+        set({ isLoading: true })
+        try {
+            const res = await productService.getFeaturedProducts();
+
+            if (res.success) {
+                set({ featuredProducts: res.data, isLoading: false })
+            } else {
+                set({ isLoading: false, error: res.message })
+            }
+        } catch (error: any) {
+            set({ isLoading: false, error: error.message });
         }
     },
     setSelectedVariant: (variant: ProductVariant | null) => {
