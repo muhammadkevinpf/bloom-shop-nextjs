@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 import { Product, ProductDetail, ProductVariant } from '@/types/product';
 import { PageableData } from '@/types/apiResponse';
 import { productService } from '@/lib/services/product';
@@ -16,7 +17,7 @@ interface ProductStore {
     clearSelectedProduct: () => void;
 }
 
-export const useProductStore = create<ProductStore>((set, get) => ({
+export const useProductStore = create<ProductStore>()(devtools((set, get) => ({
     products: [],
     pagination: null,
     isLoading: false,
@@ -64,4 +65,6 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     clearSelectedProduct: () => {
         set({ selectedProduct: null, selectedVariant: null });
     }
+}), {
+    name: 'product-store',
 }))
