@@ -1,3 +1,4 @@
+import CartProvider from "@/components/cart/CartProvider";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import type { Metadata } from "next";
@@ -26,6 +27,7 @@ export default function RootLayout({
       <body
         className={`${inter.className}  antialiased flex flex-col min-h-screen`}
       >
+        <CartProvider />
         <Header />
         <main className="flex-grow">{children}</main>
         <Footer />

@@ -1,4 +1,4 @@
-import { Product, ProductPageResponse, ProductDetailResponse } from "@/types/product";
+import { Product, ProductPageResponse, ProductDetailResponse, ProductVariantDetail } from "@/types/product";
 import { ApiResponse } from "@/types/apiResponse";
 
 const API_BASE_URL =
@@ -23,6 +23,11 @@ export const productService = {
     async searchProducts(keyword: string): Promise<ApiResponse<Product[]>> {
         const res = await fetch(`${API_BASE_URL}/api/v1/products/search?keyword=${encodeURIComponent(keyword)}`);
         if (!res.ok) throw new Error(`Failed to search products: ${res.statusText}`);
+        return res.json();
+    },
+    async getVariantById(variantId: string): Promise<ApiResponse<ProductVariantDetail>> {
+        const res = await fetch(`${API_BASE_URL}/api/v1/products/variants/${encodeURIComponent(variantId)}`);
+        if (!res.ok) throw new Error(`Failed to fetch product variant: ${res.statusText}`);
         return res.json();
     }
 }

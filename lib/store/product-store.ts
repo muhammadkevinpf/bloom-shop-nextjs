@@ -44,7 +44,9 @@ export const useProductStore = create<ProductStore>()(devtools((set, get) => ({
         }
     },
     fetchProductBySlug: async (slug: string) => {
-        set({ isLoading: true, error: null });
+        // Clear the previous product so the page cannot render a stale one
+        // while the new slug is loading.
+        set({ isLoading: true, error: null, selectedProduct: null, selectedVariant: null });
         try {
             const res = await productService.getProductBySlug(slug);
 
