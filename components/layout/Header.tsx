@@ -1,7 +1,8 @@
 "use client";
 
-import { selectCartCount, useCartHydrated } from "@/lib/store/cart-store";
+import { useIsClient } from "@/lib/hooks/use-is-client";
 import { authService } from "@/lib/services/auth";
+import { selectCartCount, useCartStore } from "@/lib/store/cart-store";
 import { Menu, Search, ShoppingCart, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,17 +10,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 
 export default function Header() {
-  const cartCount = useCartHydrated(selectCartCount, 0);
+  const cartCount = useCartStore(selectCartCount);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const pathname = usePathname();
   const { isAuthenticated } = authService;
 
   useEffect(() => {
-    setMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -141,9 +141,14 @@ export default function Header() {
             </Link>
             <div className="hidden sm:flex items-center space-x-2">
               {mounted && isAuthenticated() ? (
-                <Button variant="ghost" size="default" asChild>
-                  <Link href="/profile">Profile</Link>
-                </Button>
+                <>
+                  <Button variant="ghost" size="default" asChild>
+                    <Link href="/orders">Orders</Link>
+                  </Button>
+                  <Button variant="ghost" size="default" asChild>
+                    <Link href="/profile">Profile</Link>
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="ghost" size="default" asChild>

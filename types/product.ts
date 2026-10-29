@@ -36,6 +36,17 @@ export interface ProductDetail extends Product {
   images: ProductImage[];
 }
 
+/** Shape returned by GET /api/v1/products/variants/{variantId}. */
+export interface ProductVariantDetail {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  color?: string | null;
+  size?: string | null;
+  price: number;
+}
+
 
 
 export type ProductPageResponse = ApiResponse<PageableData<Product>>;

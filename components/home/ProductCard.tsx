@@ -2,6 +2,7 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { productService } from "@/lib/services/product";
 import { useCartStore } from "@/lib/store/cart-store";
 import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
 
-  const addToCart = useCartStore((state) => state.addToCart);
+  const addItem = useCartStore((state) => state.addItem);
   const router = useRouter();
 
   const { isAuthenticated } = authService;
@@ -28,25 +29,31 @@ export default function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isAuthenticated()) {
-      setIsAdding(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.basePrice,
-        image: product.imageUrl,
-        quantity: 1,
-      });
-
-      setIsAdding(false);
-      setJustAdded(true);
-
-      setTimeout(() => setJustAdded(false), 2000);
-    } else {
+    if (!isAuthenticated()) {
       router.push("/signin");
+      return;
+    }
+
+    setIsAdding(true);
+
+    try {
+      // The cart stores a variant, so the product's default variant is resolved
+      // first; the product page offers the full colour/size picker.
+      const res = await productService.getProductBySlug(product.slug);
+      const variant = res.data?.variants?.[0];
+
+      if (!variant) {
+        router.push(`/product/${product.slug}`);
+        return;
+      }
+
+      await addItem(variant.id, 1);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+    } catch {
+      // The store records the failure in `error`.
+    } finally {
+      setIsAdding(false);
     }
   };
 

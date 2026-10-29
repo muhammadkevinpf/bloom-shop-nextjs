@@ -6,13 +6,15 @@ import ProductNotFound from "@/components/product/ProductNotFound";
 import RelatedProducts from "@/components/product/RelatedProducts";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { authService } from "@/lib/services/auth";
 import { useCartStore } from "@/lib/store/cart-store";
 import { useProductStore } from "@/lib/store/product-store";
-import { authService } from "@/lib/services/auth";
 import { cn } from "@/lib/utils";
+import { ProductDetail, ProductVariant } from "@/types/product";
 import {
   Check,
   Heart,
+  Loader2,
   Minus,
   Plus,
   Share2,
@@ -21,62 +23,109 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function Product() {
-  const addToCart = useCartStore((state) => state.addToCart);
-  const { selectedProduct: product, fetchProductBySlug, isLoading } = useProductStore();
+  const { selectedProduct: product, error, fetchProductBySlug } = useProductStore();
   const { slug } = useParams();
-  const { isAuthenticated } = authService;
-  const router = useRouter();
-  const [quantity, setQuantity] = useState(1);
-  const [isAdding, setIsAdding] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    if (slug) fetchProductBySlug(slug as string)
+    if (slug) fetchProductBySlug(slug as string);
   }, [slug, fetchProductBySlug]);
 
+  // Nothing loaded and no error yet means the request has not settled, so show
+  // the skeleton instead of flashing "product not found".
+  if (!product && !error) {
+    return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-32 flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-muted-foreground">Loading product...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return <ProductNotFound />;
   }
 
-  const handleAddToCart = async () => {
-    if (isAuthenticated()) {
-      setIsAdding(true);
+  // Keyed so the colour/size/quantity selection resets for each product.
+  return <ProductDetailView key={product.id} product={product} />;
+}
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+function ProductDetailView({ product }: { product: ProductDetail }) {
+  const addItem = useCartStore((state) => state.addItem);
+  const router = useRouter();
+  const { isAuthenticated } = authService;
 
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.basePrice,
-        image: product.imageUrl,
-        quantity: 1,
-      });
+  const variants = useMemo(() => product.variants ?? [], [product.variants]);
+  const colors = useMemo(
+    () => [...new Set(variants.map((variant) => variant.color ?? "Default"))],
+    [variants]
+  );
 
-      setIsAdding(false);
-      setJustAdded(true);
+  const [selectedColor, setSelectedColor] = useState(() => colors[0] ?? "Default");
+  const [selectedSize, setSelectedSize] = useState<string | null>(
+    () => variants[0]?.size ?? null
+  );
+  const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-      setTimeout(() => setJustAdded(false), 2000);
-    } else {
+  const sizesForColor = useMemo(
+    () => variants.filter((variant) => (variant.color ?? "Default") === selectedColor),
+    [variants, selectedColor]
+  );
+
+  const selectedVariant = useMemo<ProductVariant | null>(() => {
+    const match = sizesForColor.find((variant) => variant.size === selectedSize);
+    return match ?? sizesForColor[0] ?? variants[0] ?? null;
+  }, [sizesForColor, selectedSize, variants]);
+
+  const unitPrice = product.basePrice + (selectedVariant?.priceAdjustment ?? 0);
+  const primaryImage =
+    product.images?.find((image) => image.isPrimary)?.imageUrl ??
+    product.images?.[0]?.imageUrl ??
+    "";
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+    const firstForColor = variants.find(
+      (variant) => (variant.color ?? "Default") === color
+    );
+    setSelectedSize(firstForColor?.size ?? null);
+  };
+
+  const handleAddToCart = async (): Promise<boolean> => {
+    if (!isAuthenticated()) {
       router.push("/signin");
+      return false;
+    }
+
+    if (!selectedVariant) {
+      setError("This product has no variants available right now.");
+      return false;
+    }
+
+    setError(null);
+    setIsAdding(true);
+
+    try {
+      await addItem(selectedVariant.id, quantity);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 2000);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add this item to your cart.");
+      return false;
+    } finally {
+      setIsAdding(false);
     }
   };
 
-  const handleBuyNow = () => {
-    handleAddToCart();
-    setTimeout(() => router.push("/cart"), 500);
-  };
-
-  const handleQuantityChange = (type: "increment" | "decrement") => {
-    if (type === "increment") {
-      setQuantity((prev) => prev + 1);
-    } else if (type === "decrement" && quantity > 1) {
-      setQuantity((prev) => prev - 1);
-    }
+  const handleBuyNow = async () => {
+    if (await handleAddToCart()) router.push("/cart");
   };
 
   return (
@@ -87,15 +136,17 @@ export default function Product() {
         <div className="space-y-4">
           <div className="w-full max-w-[500px] mx-auto flex flex-col items-center px-4">
             <div className="rounded-xl shadow-lg overflow-hidden mb-4 w-full">
-              <Image
-                src={product.images[0].imageUrl}
-                alt="Selected product"
-                width={600}
-                height={600}
-                priority
-                fetchPriority="high"
-                className="rounded-xl object-cover w-full h-auto max-h-[500px]"
-              />
+              {primaryImage && (
+                <Image
+                  src={primaryImage}
+                  alt={product.name}
+                  width={600}
+                  height={600}
+                  priority
+                  fetchPriority="high"
+                  className="rounded-xl object-cover w-full h-auto max-h-[500px]"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -117,8 +168,13 @@ export default function Product() {
 
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-foreground">
-              ${product.basePrice.toFixed(2)}
+              ${unitPrice.toFixed(2)}
             </span>
+            {selectedVariant && (
+              <span className="text-sm text-muted-foreground">
+                SKU: {selectedVariant.sku}
+              </span>
+            )}
           </div>
 
           <p className="text-muted-foreground leading-relaxed">
@@ -128,6 +184,57 @@ export default function Product() {
           <Separator />
 
           <div className="space-y-4">
+            {colors.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Colour
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {colors.map((color) => (
+                    <Button
+                      key={color}
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleColorChange(color)}
+                      aria-pressed={color === selectedColor}
+                      className={cn(
+                        "h-9 px-4",
+                        color === selectedColor && "border-primary ring-1 ring-primary"
+                      )}
+                    >
+                      {color}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {sizesForColor.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Size
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {sizesForColor.map((variant) => (
+                    <Button
+                      key={variant.id}
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedSize(variant.size ?? null)}
+                      aria-pressed={variant.id === selectedVariant?.id}
+                      className={cn(
+                        "h-9 min-w-[52px] px-3",
+                        variant.id === selectedVariant?.id &&
+                          "border-primary ring-1 ring-primary"
+                      )}
+                    >
+                      {variant.size ?? "One size"}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">
                 Quantity
@@ -137,9 +244,10 @@ export default function Product() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleQuantityChange("decrement")}
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                     disabled={quantity <= 1}
                     className="h-10 w-10 rounded-r-none"
+                    aria-label="Decrease quantity"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -149,14 +257,21 @@ export default function Product() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleQuantityChange("increment")}
+                    onClick={() => setQuantity((prev) => prev + 1)}
                     className="h-10 w-10 rounded-l-none"
+                    aria-label="Increase quantity"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </div>
+
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
@@ -172,7 +287,7 @@ export default function Product() {
               >
                 {isAdding ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Adding...
                   </div>
                 ) : justAdded ? (
@@ -192,6 +307,7 @@ export default function Product() {
                 size="lg"
                 variant="outline"
                 onClick={handleBuyNow}
+                disabled={isAdding}
                 className="flex-1"
               >
                 Buy Now

@@ -5,6 +5,14 @@ const API_BASE_URL =
 
 const AUTH_STORAGE_KEY = "bloom_auth_tokens";
 
+/** Fired on window whenever the stored session changes, so UI state can follow. */
+export const AUTH_CHANGE_EVENT = "bloom:auth-change";
+
+function notifyAuthChange(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+}
+
 export function getStoredTokens(): AuthTokens | null {
   if (typeof window === "undefined") return null;
   try {
@@ -21,6 +29,7 @@ export function saveTokens(tokens: AuthTokens): void {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(tokens));
   } catch {
   }
+  notifyAuthChange();
 }
 
 export function clearTokens(): void {
@@ -29,6 +38,7 @@ export function clearTokens(): void {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   } catch {
   }
+  notifyAuthChange();
 }
 
 export const authService = {
